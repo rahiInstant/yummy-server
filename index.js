@@ -35,6 +35,7 @@ async function run() {
     const yummyDB = client.db("foodNest");
     const foodCollection = yummyDB.collection("food");
     const orderCollection = yummyDB.collection("order");
+    const feedCollection = yummyDB.collection("feed");
 
     app.post("/jwt", async (req, res) => {
       console.log("thank you");
@@ -119,6 +120,15 @@ async function run() {
         },
       };
       const result = await orderCollection.find(query, option).toArray();
+      res.send(result);
+    });
+    app.post("/feedback", async (req, res) => {
+      const feedback = req.body;
+      const result = await feedCollection.insertOne(feedback);
+      res.send(result);
+    });
+    app.get("/gallery", async (req, res) => {
+      const result = await feedCollection.find().toArray();
       res.send(result);
     });
     console.log(
