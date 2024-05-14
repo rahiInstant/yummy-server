@@ -132,7 +132,7 @@ async function run() {
       res.send(result);
     });
 
-    app.get('/top-food', async(req, res) => {
+    app.get("/top-food", async (req, res) => {
       const query = {};
       const option = {
         projection: {
@@ -145,9 +145,19 @@ async function run() {
           count: 1,
         },
       };
-      const result = await foodCollection.find(query, option).sort({count:-1}).limit(6).toArray();
+      const result = await foodCollection
+        .find(query, option)
+        .sort({ count: -1 })
+        .limit(6)
+        .toArray();
       res.send(result);
-    })
+    });
+    app.delete("/user-order-delete/:id", async (req, res) => {
+      const product = req.params.id;
+      const query = { _id: new ObjectId(req.params.id) };
+      const result = await orderCollection.deleteOne(query);
+      res.send(result);
+    });
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!"
     );
