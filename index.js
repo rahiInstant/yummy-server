@@ -54,6 +54,13 @@ async function run() {
         .clearCookie("access_token", { httpOnly: true, maxAge: 0 })
         .send({ logout: true });
     });
+    app.patch("/update-food/:id", async (req, res) => {
+      const query = { _id: new ObjectId(req.params.id) };
+      const item = req.body.itemCount;
+      const updateDoc = { $inc: { count: item } };
+      const result = await foodCollection.updateOne(query, updateDoc);
+      res.send(result);
+    });
     app.post("/add-food", async (req, res) => {
       const foodInfo = req.body;
       const result = await foodCollection.insertOne(foodInfo);
@@ -62,7 +69,15 @@ async function run() {
     app.get("/get-food", async (req, res) => {
       const query = {};
       const option = {
-        projection: { name: 1, photo: 1, category: 1, price: 1, quantity: 1 },
+        projection: {
+          name: 1,
+          photo: 1,
+          category: 1,
+          price: 1,
+          quantity: 1,
+          discount: 1,
+          count: 1,
+        },
       };
       const result = await foodCollection.find(query, option).toArray();
       res.send(result);
