@@ -1,4 +1,4 @@
-const { MongoClient, ServerApiVersion } = require("mongodb");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const express = require("express");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
@@ -34,6 +34,7 @@ async function run() {
     await client.db("admin").command({ ping: 1 });
     const yummyDB = client.db("foodNest");
     const foodCollection = yummyDB.collection("food");
+    const orderCollection = yummyDB.collection("order");
 
     app.post("/jwt", async (req, res) => {
       console.log("thank you");
@@ -66,12 +67,18 @@ async function run() {
       const result = await foodCollection.find(query, option).toArray();
       res.send(result);
     });
+    app.get("/get-food-detail/:id", async (req, res) => {
+      const id = req.params.id;
+      console.log(id);
+      const query = { _id: new ObjectId(id) };
+      const result = await foodCollection.findOne(query);
+      res.send(result);
+    });
+
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!"
     );
   } finally {
-    // Ensures that the client will close when you finish/error
-    // await client.close();
   }
 }
 run().catch(console.dir);
