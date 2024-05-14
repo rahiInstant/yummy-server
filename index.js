@@ -20,6 +20,26 @@ app.use(
 );
 app.use(express.json());
 app.use(cookieParser());
+async function logger(req, res, next) {
+  console.log("called", req.hostname, req.originalUrl);
+  next();
+}
+
+const verifyToken = async (req, res, next) => {
+  const token = req.cookies["access_token"];
+  if (!token) {
+    return res.status(401).send({ message: "forbidden" });
+  }
+
+  jwt.verify(token, process.env.ACCESS_TOKEN, (err, decode) => {
+    if (err) {
+      // console.log(err)
+      return res.status(401).send({ message: "unauthorized" });
+    }
+    req.user = decode;
+    next();
+  });
+};
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
@@ -61,14 +81,14 @@ async function run() {
         .clearCookie("access_token", { httpOnly: true, maxAge: 0 })
         .send({ logout: true });
     });
-    app.patch("/update-food/:id", async (req, res) => {
+    app.patch("/update-food/:id", logger, verifyToken, async (req, res) => {
       const query = { _id: new ObjectId(req.params.id) };
       const item = req.body.itemCount;
       const updateDoc = { $inc: { count: item } };
       const result = await foodCollection.updateOne(query, updateDoc);
       res.send(result);
     });
-    app.post("/add-food", async (req, res) => {
+    app.post("/add-food", logger, verifyToken, async (req, res) => {
       const foodInfo = req.body;
       const result = await foodCollection.insertOne(foodInfo);
       res.send(result);
@@ -91,17 +111,16 @@ async function run() {
     });
     app.get("/get-food-detail/:id", async (req, res) => {
       const id = req.params.id;
-      console.log(id);
       const query = { _id: new ObjectId(id) };
       const result = await foodCollection.findOne(query);
       res.send(result);
     });
-    app.post("/purchase", async (req, res) => {
+    app.post("/purchase", logger, verifyToken, async (req, res) => {
       const orderData = req.body;
       const result = await orderCollection.insertOne(orderData);
       res.send(result);
     });
-    app.get("/my-item/:email", async (req, res) => {
+    app.get("/my-item/:email", logger, verifyToken, async (req, res) => {
       const query = { email: req.params.email };
       const option = {
         projection: {
@@ -115,7 +134,7 @@ async function run() {
       const result = await foodCollection.find(query, option).toArray();
       res.send(result);
     });
-    app.get("/user-order/:email", async (req, res) => {
+    app.get("/user-order/:email", logger, verifyToken, async (req, res) => {
       const query = { email: req.params.email };
       const option = {
         projection: {
@@ -128,7 +147,7 @@ async function run() {
       const result = await orderCollection.find(query, option).toArray();
       res.send(result);
     });
-    app.post("/feedback", async (req, res) => {
+    app.post("/feedback", logger, verifyToken, async (req, res) => {
       const feedback = req.body;
       const result = await feedCollection.insertOne(feedback);
       res.send(result);
