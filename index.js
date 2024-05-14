@@ -10,7 +10,11 @@ const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@foodnes
 
 app.use(
   cors({
-    origin: ["http://localhost:5173"],
+    origin: [
+      "http://localhost:5173",
+      "https://recipe-net.web.app",
+      "https://recipe-net.firebaseapp.com",
+    ],
     credentials: true,
   })
 );
@@ -26,12 +30,18 @@ const client = new MongoClient(uri, {
   },
 });
 
+const cookieObj = {
+  httpOnly: true,
+  sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
+  secure: process.env.NODE_ENV === "production",
+};
+
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
-    await client.connect();
+    // await client.connect();
     // Send a ping to confirm a successful connection
-    await client.db("admin").command({ ping: 1 });
+    // await client.db("admin").command({ ping: 1 });
     const yummyDB = client.db("foodNest");
     const foodCollection = yummyDB.collection("food");
     const orderCollection = yummyDB.collection("order");
@@ -43,11 +53,7 @@ async function run() {
       const token = jwt.sign(user, process.env.ACCESS_TOKEN, {
         expiresIn: "1h",
       });
-      res
-        .cookie("access_token", token, {
-          httpOnly: true,
-        })
-        .send({ success: true });
+      res.cookie("access_token", token, cookieObj).send({ success: true });
     });
     app.post("/out", async (req, res) => {
       console.log(req.body);
@@ -156,6 +162,35 @@ async function run() {
       const product = req.params.id;
       const query = { _id: new ObjectId(req.params.id) };
       const result = await orderCollection.deleteOne(query);
+      res.send(result);
+    });
+    app.post("/handle-search", async (req, res) => {
+      const query = { name: req.body.search };
+      console.log(query);
+      // const result = await feedCollection
+      //   .aggregate([
+      //     {
+      //       $search: {
+      //         index: "food",
+      //         text: { path: "name", query: req.body.search },
+      //         fuzzy: {},
+      //       },
+      //     },
+      //     {
+      //       $limit: 2,
+      //     },
+      //     {
+      //       $project: {
+      //         _id: 0,
+      //         name: 1,
+      //         score: { $meta: "searchScore" },
+      //       },
+      //     },
+      //   ])
+      //   .toArray();
+      // console.log(result);
+      const result = await foodCollection.find(query).toArray();
+      // console.log(result);
       res.send(result);
     });
     console.log(
