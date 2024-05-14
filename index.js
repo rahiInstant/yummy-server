@@ -74,7 +74,11 @@ async function run() {
       const result = await foodCollection.findOne(query);
       res.send(result);
     });
-
+    app.post("/purchase", async (req, res) => {
+      const orderData = req.body;
+      const result = await orderCollection.insertOne(orderData);
+      res.send(result);
+    });
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!"
     );
