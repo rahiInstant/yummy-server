@@ -131,6 +131,23 @@ async function run() {
       const result = await feedCollection.find().toArray();
       res.send(result);
     });
+
+    app.get('/top-food', async(req, res) => {
+      const query = {};
+      const option = {
+        projection: {
+          name: 1,
+          photo: 1,
+          category: 1,
+          price: 1,
+          quantity: 1,
+          discount: 1,
+          count: 1,
+        },
+      };
+      const result = await foodCollection.find(query, option).sort({count:-1}).limit(6).toArray();
+      res.send(result);
+    })
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!"
     );
