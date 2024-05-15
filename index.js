@@ -93,6 +93,17 @@ async function run() {
       const result = await foodCollection.insertOne(foodInfo);
       res.send(result);
     });
+    app.post("/all-food-sort", async (req, res) => {
+      const keyStore = {
+        priceHL: { price: -1 },
+        priceLH: { price: 1 },
+        purchaseHL: { count: -1 },
+        purchaseLH: { count: 1 },
+      };
+      const key = req.body.key;
+      const result =await foodCollection.find().sort(keyStore[key]).toArray()
+      res.send(result);
+    });
     app.get("/get-food", async (req, res) => {
       const query = {};
       const option = {
@@ -185,8 +196,11 @@ async function run() {
       const result = await orderCollection.deleteOne(query);
       res.send(result);
     });
-    app.delete("/remove-my-food", async (req, res) => {
-      
+    app.delete("/remove-my-food/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = foodCollection.deleteOne(query);
+      res.send(result);
     });
     app.patch("/update-item/:id", async (req, res) => {
       const id = req.params.id;
