@@ -156,7 +156,9 @@ async function run() {
       const result = await feedCollection.find().toArray();
       res.send(result);
     });
+    // app.put("/update-item/:id", async (req, res) => {
 
+    // });
     app.get("/top-food", async (req, res) => {
       const query = {};
       const option = {
@@ -183,33 +185,22 @@ async function run() {
       const result = await orderCollection.deleteOne(query);
       res.send(result);
     });
+    app.delete("/remove-my-food", async (req, res) => {
+      
+    });
+    app.patch("/update-item/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const updateDoc = {
+        $set: { ...req.body },
+      };
+      const result = await foodCollection.updateOne(filter, updateDoc);
+      res.send(result);
+    });
     app.post("/handle-search", async (req, res) => {
       const query = { name: req.body.search };
       console.log(query);
-      // const result = await feedCollection
-      //   .aggregate([
-      //     {
-      //       $search: {
-      //         index: "food",
-      //         text: { path: "name", query: req.body.search },
-      //         fuzzy: {},
-      //       },
-      //     },
-      //     {
-      //       $limit: 2,
-      //     },
-      //     {
-      //       $project: {
-      //         _id: 0,
-      //         name: 1,
-      //         score: { $meta: "searchScore" },
-      //       },
-      //     },
-      //   ])
-      //   .toArray();
-      // console.log(result);
       const result = await foodCollection.find(query).toArray();
-      // console.log(result);
       res.send(result);
     });
     console.log(
