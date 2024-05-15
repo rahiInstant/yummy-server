@@ -11,9 +11,9 @@ const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@foodnes
 app.use(
   cors({
     origin: [
-      "http://localhost:5173",
       "https://recipe-net.web.app",
       "https://recipe-net.firebaseapp.com",
+      "http://localhost:5173",
     ],
     credentials: true,
   })
@@ -50,12 +50,6 @@ const client = new MongoClient(uri, {
   },
 });
 
-const cookieObj = {
-  httpOnly: true,
-  sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
-  secure: process.env.NODE_ENV === "production",
-};
-
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
@@ -73,7 +67,13 @@ async function run() {
       const token = jwt.sign(user, process.env.ACCESS_TOKEN, {
         expiresIn: "1h",
       });
-      res.cookie("access_token", token, cookieObj).send({ success: true });
+      res
+        .cookie("access_token", token, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
+        })
+        .send({ success: true });
     });
     app.post("/out", async (req, res) => {
       console.log(req.body);
@@ -82,9 +82,10 @@ async function run() {
         .send({ logout: true });
     });
     app.patch("/update-food/:id", logger, verifyToken, async (req, res) => {
-      const query = { _id: new ObjectId(req.params.id) };
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
       const item = req.body.itemCount;
-      const updateDoc = { $inc: { count: item } };
+      const updateDoc = { $inc: { count: item, quantity: -item } };
       const result = await foodCollection.updateOne(query, updateDoc);
       res.send(result);
     });
@@ -101,7 +102,7 @@ async function run() {
         purchaseLH: { count: 1 },
       };
       const key = req.body.key;
-      const result =await foodCollection.find().sort(keyStore[key]).toArray()
+      const result = await foodCollection.find().sort(keyStore[key]).toArray();
       res.send(result);
     });
     app.get("/get-food", async (req, res) => {
